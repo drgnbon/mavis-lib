@@ -28,6 +28,7 @@ pub fn screenshot_area_to_mat(
     let screens = screenshots::Screen::all()?;
     let screen = &screens[0];
 
+    //obiebalsia
     let image = screen.capture_area(start_pos.0, start_pos.1, end_pos.0, end_pos.1)?;
     let (width, height) = (image.width() as i32, image.height() as i32);
 

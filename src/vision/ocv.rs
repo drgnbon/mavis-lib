@@ -107,4 +107,36 @@ pub mod ocv {
             Ok(None)
         }
     }
+
+    pub fn is_template_on_image(
+        source: &Mat,
+        template: &Mat,
+        threshold: f32,
+    )
+    ->Result<bool,Box<dyn std::error::Error>> {
+
+        match find_template_in_image(
+            source, 
+            template, 
+            threshold
+        ){
+            Ok(None)=>{
+                return Ok((false));
+            }
+            Ok(cords)=>{
+                return Ok((true));
+            }
+            Err(e)=>{
+                println!("Error ocurated in is_template_on_image: {}",e);
+            }
+        }
+
+
+
+
+        Ok((false))
+    }
+
+
+
 }
