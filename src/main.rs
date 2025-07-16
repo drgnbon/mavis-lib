@@ -1,3 +1,6 @@
+use mavis_lib;
+use opencv::{core, imgcodecs, imgproc, prelude::*};
+
 fn main() {
-    println!("Hello, world!");
+    let mat_to_save = mavis_lib::utils::screenshot_to_mat().unwrap();
 }

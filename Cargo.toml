@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+opencv = "0.95.0"
+anyhow = "1.0"
+windows = { version = "0.51", features = ["Win32_UI_Input_KeyboardAndMouse"] }
+winapi = { version = "0.3.7", features = ["winuser", "wincon"] }
+device_query = "2.1.0"
+winit = "0.25"
+screenshots = "0.8.10"
