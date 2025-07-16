@@ -2,5 +2,11 @@ use mavis_lib;
 use opencv::{core, imgcodecs, imgproc, prelude::*};
 
 fn main() {
-    let mat_to_save = mavis_lib::utils::screenshot_to_mat().unwrap();
+    mavis_lib::action::input_text_simulated(
+        "text",
+        "path_to_template",
+        (1920, 1080),
+        ((9, 8), (7, 6)),
+        0.6,
+    );
 }
