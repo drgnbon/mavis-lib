@@ -1,5 +1,55 @@
+use std::ops::Div;
+
 use opencv::{core, imgproc, prelude::*};
 use screenshots;
+
+pub struct DisplayArea {
+    s_x: i32,
+    s_y: i32,
+    e_x: i32,
+    e_y: i32,
+}
+
+impl DisplayArea {
+    pub fn from_rectangle(x: i32, y: i32, w: u32, h: u32) -> Self {
+        Self {
+            s_x: x,
+            s_y: y,
+            e_x: x + w as i32,
+            e_y: y + h as i32,
+        }
+    }
+
+    pub fn from_points(s_x: i32, s_y: i32, e_x: i32, e_y: i32) -> Self {
+        Self {
+            s_x: std::cmp::min(s_x, e_x),
+            s_y: std::cmp::min(s_y, e_y),
+            e_x: std::cmp::max(s_x, e_x),
+            e_y: std::cmp::max(s_y, e_y),
+        }
+    }
+
+    pub fn get_rectangle(&self) -> ((i32, i32), (u32, u32)) {
+        (
+            (
+                std::cmp::min(self.s_x, self.e_x),
+                std::cmp::min(self.s_y, self.e_y),
+            ),
+            (
+                (self.s_x - self.e_x).abs() as u32,
+                (self.s_y - self.e_y).abs() as u32,
+            ),
+        )
+    }
+
+    pub fn get_points(&self) -> ((i32, i32), (i32, i32)) {
+        ((self.s_x, self.s_y), (self.e_x, self.e_y))
+    }
+
+    pub fn get_average_point(&self) -> (i32, i32) {
+        ((self.s_x + self.e_x) / 2, (self.s_y + self.e_y) / 2)
+    }
+}
 
 /// Captures a screen area and converts it to an OpenCV Mat in BGR format.
 ///
@@ -21,15 +71,11 @@ use screenshots;
 /// # Safety
 /// - Unsafe operations used for Mat creation and data copying
 /// - Caller must ensure valid screen coordinates
-pub fn screenshot_area_to_mat(
-    start_pos: (i32, i32),
-    end_pos: (u32, u32),
-) -> Result<core::Mat, Box<dyn std::error::Error>> {
+pub fn screenshot_area_to_mat(area: DisplayArea) -> Result<core::Mat, Box<dyn std::error::Error>> {
     let screens = screenshots::Screen::all()?;
     let screen = &screens[0];
-
-    //obiebalsia
-    let image = screen.capture_area(start_pos.0, start_pos.1, end_pos.0, end_pos.1)?;
+    let ((x, y), (width, height)) = area.get_rectangle();
+    let image = screen.capture_area(x, y, width, height)?;
     let (width, height) = (image.width() as i32, image.height() as i32);
 
     let mat = unsafe {
@@ -50,20 +96,4 @@ pub fn screenshot_area_to_mat(
     )?;
 
     Ok(bgr_mat)
-}
-
-/// Calculates the geometric center point of a rectangle.
-///
-/// # Arguments
-/// * `x` - Left coordinate of the rectangle
-/// * `y` - Top coordinate of the rectangle
-/// * `w` - Width of the rectangle (must be > 0)
-/// * `h` - Height of the rectangle (must be > 0)
-///
-/// # Returns
-/// `(u32, u32)` tuple representing the center coordinates:
-/// - First element: Horizontal center (`x + w/2`)
-/// - Second element: Vertical center (`y + h/2`)
-pub fn average_point(x: u32, y: u32, w: u32, h: u32) -> (u32, u32) {
-    (x + (w / 2), y + (h / 2))
 }
