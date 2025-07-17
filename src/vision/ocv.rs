@@ -4,31 +4,35 @@ use opencv::{
     imgproc::{INTER_LINEAR, TM_CCOEFF_NORMED, match_template, resize},
     prelude::*,
 };
+use crate::utils::DisplayArea;
 
 pub mod ocv {
+
+
     use super::*;
 
     pub fn find_template_in_image(
+        threshold: f32,
         source: &Mat,
         template: &Mat,
-        threshold: f32,
-    ) -> Result<Option<(u32, u32, u32, u32)>> {
+    ) -> Result<Option<DisplayArea>, Box<dyn std::error::Error>> {
+
         if source.empty() {
-            return Err(anyhow!("Source image is empty"));
+            return Err("Source image is empty".into());
         }
         if template.empty() {
-            return Err(anyhow!("Template image is empty"));
+            return Err("Template image is empty".into());
         }
 
         if template.rows() > source.rows() || template.cols() > source.cols() {
-            return Err(anyhow!("Template size exceeds source image dimensions"));
+            return Err("Template size exceeds source image dimensions".into());
         }
 
         if !(0.0..=1.0).contains(&threshold) {
-            return Err(anyhow!(
+            return Err(format!(
                 "Threshold must be between 0 and 1, got {}",
                 threshold
-            ));
+            ).into());
         }
 
         // Определение диапазона масштабов от 0.5 до 2.0 с шагом 0.1
@@ -97,34 +101,37 @@ pub mod ocv {
 
         // Проверка порога соответствия
         if best_val > threshold as f64 {
-            Ok(Some((
-                best_loc.x as u32,
-                best_loc.y as u32,
-                ((template.cols() as f32) * best_scale as f32) as u32,
-                ((template.rows() as f32) * best_scale as f32) as u32,
+
+            Ok(Some(DisplayArea::from_rectangle(
+                best_loc.x, 
+                best_loc.y, 
+                template.cols() as u32, 
+                template.rows() as u32
             )))
+
         } else {
             Ok(None)
         }
     }
 
     pub fn is_template_on_image(
+        threshold: f32,
         source: &Mat,
         template: &Mat,
-        threshold: f32,
+        area: &DisplayArea,
     )
     ->Result<bool,Box<dyn std::error::Error>> {
 
         match find_template_in_image(
+            threshold,
             source, 
             template, 
-            threshold
         ){
             Ok(None)=>{
-                return Ok((false));
+                return Ok(false);
             }
-            Ok(cords)=>{
-                return Ok((true));
+            Ok(_)=>{
+                return Ok(true);
             }
             Err(e)=>{
                 println!("Error ocurated in is_template_on_image: {}",e);

@@ -11,6 +11,19 @@ pub struct DisplayArea {
 }
 
 impl DisplayArea {
+
+    pub fn from_relative(&self,relative_area: DisplayArea) -> Self{
+        
+        let ((x,y),_) = relative_area.get_points();
+        
+        Self { 
+            s_x: self.s_x+x, 
+            s_y: self.s_y+y, 
+            e_x: self.e_x+x, 
+            e_y: self.e_y+y, 
+        }
+    }
+
     pub fn from_rectangle(x: i32, y: i32, w: u32, h: u32) -> Self {
         Self {
             s_x: x,
@@ -71,7 +84,7 @@ impl DisplayArea {
 /// # Safety
 /// - Unsafe operations used for Mat creation and data copying
 /// - Caller must ensure valid screen coordinates
-pub fn screenshot_area_to_mat(area: DisplayArea) -> Result<core::Mat, Box<dyn std::error::Error>> {
+pub fn screenshot_area_to_mat(area: &DisplayArea) -> Result<core::Mat, Box<dyn std::error::Error>> {
     let screens = screenshots::Screen::all()?;
     let screen = &screens[0];
     let ((x, y), (width, height)) = area.get_rectangle();
