@@ -1,6 +1,7 @@
 use crate::input::mouse::mouse_control::{mouse_left_click, mouse_set_position};
 use crate::input::{keyboard, mouse};
 use crate::utils::DisplayArea;
+use crate::vision::ocv::ocv::find_template_in_image;
 use crate::vision::{ocv, tsrt};
 use crate::{utils, vision};
 use opencv::{core, imgcodecs, imgproc, prelude::*};
@@ -10,7 +11,7 @@ use std::time::{Duration, Instant};
 
 
 pub fn input_text_simulated(
-    treshold: f32,
+    recognition: f32,
     template: &Mat,
     perm_area: ((i32, i32), (u32, u32)),
     resolution: (u32, u32),
@@ -19,7 +20,7 @@ pub fn input_text_simulated(
 }
 
 pub fn wait_for_image(
-    threshold: f32,
+    recognition: f32,
     target: &Mat,
     active_area: &DisplayArea,
     fps_lock: u8,
@@ -40,7 +41,7 @@ pub fn wait_for_image(
 
 
         // Проверка наличия шаблона
-        match ocv::ocv::is_template_on_image(threshold,&screenshot, target, active_area) {
+        match ocv::ocv::is_template_on_image(recognition,&screenshot, target, active_area) {
             Ok(true) => return Ok(()),
             Ok(false) => (),
             Err(e) => return Err(format!("Ошибка поиска шаблона: {:?}", e)),
@@ -62,7 +63,7 @@ pub fn wait_for_image(
 }
 
 pub fn click_on_target(
-    threshold: f32,
+    recognition: f32,
     target: &Mat,
     active_area: &DisplayArea,
     screen_resolution: (u32,u32),
@@ -77,7 +78,7 @@ pub fn click_on_target(
 
 
     //найти место
-    let point = match ocv::ocv::find_template_in_image(threshold,&screenshot, target) {
+    let point = match ocv::ocv::find_template_in_image(recognition,&screenshot, target) {
         Ok(Some(area)) => active_area.from_relative(area).get_average_point(),
         Ok(None) => {
             eprintln!("Образец не найден");
@@ -99,10 +100,36 @@ pub fn click_on_target(
     Ok(())
 }
 
-pub fn find_object() -> DisplayArea {
-    DisplayArea::from_points(0, 0, 0, 0)
+pub fn find_object(
+    recognition: f32,
+    source: &Mat,
+    template: &Mat,
+) -> Result<DisplayArea,String> {
+
+    match find_template_in_image(recognition, source, template) {
+        Ok(None)=>{
+            return Err("find_object: None object has been founded".to_string())
+        }
+        Ok(area)=> {
+            return Ok(area.unwrap())
+        }
+        Err(e)=>{
+            return Err(format!("find_object: Error occurated from finding object: {}",e).to_string())
+        }
+    }
+
 }
 
-pub fn extract_text() -> Result<String, String> {
-    Ok(format!("ZZZZZZ"))
+pub fn extract_text(
+    img: &Mat,
+    path_to_cache_file: &str,
+) -> Result<String, String> {
+
+
+    let _ = imgcodecs::imwrite(path_to_cache_file, img, &core::Vector::new());
+    let text = tsrt::tsrt::read_text_from_image(path_to_cache_file);
+    let _ = std::fs::remove_file(path_to_cache_file);
+
+    Ok(text)
+
 }

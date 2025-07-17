@@ -12,26 +12,26 @@ pub mod ocv {
     use super::*;
 
     pub fn find_template_in_image(
-        threshold: f32,
+        recognition: f32,
         source: &Mat,
         template: &Mat,
     ) -> Result<Option<DisplayArea>, Box<dyn std::error::Error>> {
 
         if source.empty() {
-            return Err("Source image is empty".into());
+            return Err("find_template_in_image: Source image is empty".into());
         }
         if template.empty() {
-            return Err("Template image is empty".into());
+            return Err("find_template_in_image: Template image is empty".into());
         }
 
         if template.rows() > source.rows() || template.cols() > source.cols() {
-            return Err("Template size exceeds source image dimensions".into());
+            return Err("find_template_in_image: Template size exceeds source image dimensions".into());
         }
 
-        if !(0.0..=1.0).contains(&threshold) {
+        if !(0.0..=1.0).contains(&recognition) {
             return Err(format!(
-                "Threshold must be between 0 and 1, got {}",
-                threshold
+                "find_template_in_image: Threshold must be between 0 and 1, got {}",
+                recognition
             ).into());
         }
 
@@ -100,7 +100,7 @@ pub mod ocv {
         }
 
         // Проверка порога соответствия
-        if best_val > threshold as f64 {
+        if best_val > recognition as f64 {
 
             Ok(Some(DisplayArea::from_rectangle(
                 best_loc.x, 
@@ -115,7 +115,7 @@ pub mod ocv {
     }
 
     pub fn is_template_on_image(
-        threshold: f32,
+        recognition: f32,
         source: &Mat,
         template: &Mat,
         area: &DisplayArea,
@@ -123,7 +123,7 @@ pub mod ocv {
     ->Result<bool,Box<dyn std::error::Error>> {
 
         match find_template_in_image(
-            threshold,
+            recognition,
             source, 
             template, 
         ){
@@ -134,7 +134,7 @@ pub mod ocv {
                 return Ok(true);
             }
             Err(e)=>{
-                println!("Error ocurated in is_template_on_image: {}",e);
+                println!("find_template_in_image: Error ocurated in is_template_on_image: {}",e);
             }
         }
 

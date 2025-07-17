@@ -45,20 +45,20 @@ fn main() {
     // ).unwrap();
 
 
-    match wait_for_image(
-        0.75, 
-        &target, 
-        &active_area, 
-        1, 
-        Duration::from_secs(20)
-    ){
-        Ok(())=>{
-            println!("Попался шараноид");
-        }
-        Err(_)=>{
-            println!("хуй");
-        }
-    }
+    // match wait_for_image(
+    //     0.75, 
+    //     &target, 
+    //     &active_area, 
+    //     1, 
+    //     Duration::from_secs(20)
+    // ){
+    //     Ok(())=>{
+    //         println!("Попался шараноид");
+    //     }
+    //     Err(_)=>{
+    //         println!("хуй");
+    //     }
+    // }
 
 
     // click_on_target(
@@ -70,7 +70,7 @@ fn main() {
     // ).unwrap();
 
 
-
-
+    let t = mavis_lib::action::extract_text(&target, "cache.png").unwrap();
+    println!("Text occurated: {}",t);
 
 }
