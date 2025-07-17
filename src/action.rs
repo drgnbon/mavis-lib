@@ -1,10 +1,10 @@
-use crate::input::mouse::mouse_control::{mouse_left_click, mouse_set_position};
+use crate::input::mouse::{mouse_left_click, mouse_set_position};
 use crate::input::{keyboard, mouse};
 use crate::utils::DisplayArea;
-use crate::vision::ocv::ocv::find_target_in_image;
+use crate::vision::ocv::find_target_in_image;
 use crate::vision::{ocv, tsrt};
-use crate::{utils, vision};
-use opencv::{core, imgcodecs, imgproc, prelude::*};
+use crate::{utils};
+use opencv::{core, imgcodecs, prelude::*};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -22,20 +22,20 @@ pub fn input_text_simulated(
         Ok(mat) => mat,
         Err(e) => return Err(format!("input_text_simulated: {}", e)),
     };
-    let mouse_pos = match ocv::ocv::find_target_in_image(rec, &screenshot, target) {
+    let mouse_pos = match ocv::find_target_in_image(rec, &screenshot, target) {
         Ok(relative_area) => relative_area.from_relative(active_area).get_average_point(),
         Err(e) => return Err(format!("input_text_simulated: {}", e)),
     };
 
-    mouse::mouse_control::mouse_set_position(
+    mouse::mouse_set_position(
         mouse_pos.0 as u32,
         mouse_pos.1 as u32,
         resolution.0,
         resolution.1,
     );
 
-    mouse::mouse_control::mouse_left_click(delay);
-    keyboard::keyboard_control::type_unicode_text(text);
+    mouse::mouse_left_click(delay);
+    keyboard::type_unicode_text(text);
 
     Ok(())
 }
@@ -62,7 +62,7 @@ pub fn wait_for_image(
 
 
         // Проверка наличия шаблона
-        match ocv::ocv::is_target_on_image(recognition,&screenshot, target, active_area) {
+        match ocv::is_target_on_image(recognition,&screenshot, target) {
             Ok(true) => return Ok(()),
             Ok(false) => (),
             Err(e) => return Err(format!("Ошибка поиска шаблона: {:?}", e)),
@@ -99,7 +99,7 @@ pub fn click_on_target(
 
 
     //найти место
-    let point = match ocv::ocv::find_target_in_image(recognition,&screenshot, target) {
+    let point = match ocv::find_target_in_image(recognition,&screenshot, target) {
         Ok(area) => area.from_relative(active_area).get_average_point(),
         Err(e) => {
             eprintln!("Ошибка нахождения образца: {:?}", e);
@@ -142,7 +142,7 @@ pub fn extract_text(
 
 
     let _ = imgcodecs::imwrite(path_to_cache_file, img, &core::Vector::new());
-    let text = tsrt::tsrt::read_text_from_image(path_to_cache_file);
+    let text = tsrt::read_text_from_image(path_to_cache_file);
     let _ = std::fs::remove_file(path_to_cache_file);
 
     Ok(text)

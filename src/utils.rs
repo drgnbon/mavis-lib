@@ -1,5 +1,3 @@
-use std::ops::Div;
-
 use opencv::{core, imgproc, prelude::*};
 use screenshots;
 

@@ -790,7 +790,6 @@ dependencies = [
 name = "mavis-lib"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "device_query",
  "opencv",
  "screenshots",
