@@ -12,9 +12,9 @@ pub struct DisplayArea {
 
 impl DisplayArea {
 
-    pub fn from_relative(&self,relative_area: DisplayArea) -> Self{
+    pub fn from_relative(&self,basic_area: &DisplayArea) -> Self{
         
-        let ((x,y),_) = relative_area.get_points();
+        let ((x,y),_) = basic_area.get_points();
         
         Self { 
             s_x: self.s_x+x, 

@@ -1,7 +1,7 @@
 use crate::input::mouse::mouse_control::{mouse_left_click, mouse_set_position};
 use crate::input::{keyboard, mouse};
 use crate::utils::DisplayArea;
-use crate::vision::ocv::ocv::find_template_in_image;
+use crate::vision::ocv::ocv::find_target_in_image;
 use crate::vision::{ocv, tsrt};
 use crate::{utils, vision};
 use opencv::{core, imgcodecs, imgproc, prelude::*};
@@ -11,12 +11,33 @@ use std::time::{Duration, Instant};
 
 
 pub fn input_text_simulated(
-    recognition: f32,
-    template: &Mat,
-    perm_area: ((i32, i32), (u32, u32)),
+    rec: f32,
+    target: &Mat,
+    active_area: &DisplayArea,
     resolution: (u32, u32),
+    delay: Duration,
     text: &str,
-) {
+) -> Result<(), String> {
+    let screenshot: Mat = match utils::screenshot_area_to_mat(active_area) {
+        Ok(mat) => mat,
+        Err(e) => return Err(format!("input_text_simulated: {}", e)),
+    };
+    let mouse_pos = match ocv::ocv::find_target_in_image(rec, &screenshot, target) {
+        Ok(relative_area) => relative_area.from_relative(active_area).get_average_point(),
+        Err(e) => return Err(format!("input_text_simulated: {}", e)),
+    };
+
+    mouse::mouse_control::mouse_set_position(
+        mouse_pos.0 as u32,
+        mouse_pos.1 as u32,
+        resolution.0,
+        resolution.1,
+    );
+
+    mouse::mouse_control::mouse_left_click(delay);
+    keyboard::keyboard_control::type_unicode_text(text);
+
+    Ok(())
 }
 
 pub fn wait_for_image(
@@ -41,7 +62,7 @@ pub fn wait_for_image(
 
 
         // Проверка наличия шаблона
-        match ocv::ocv::is_template_on_image(recognition,&screenshot, target, active_area) {
+        match ocv::ocv::is_target_on_image(recognition,&screenshot, target, active_area) {
             Ok(true) => return Ok(()),
             Ok(false) => (),
             Err(e) => return Err(format!("Ошибка поиска шаблона: {:?}", e)),
@@ -59,7 +80,7 @@ pub fn wait_for_image(
 
 
     // Если все попытки не удались, возвращаем ошибку
-    Err(format!("Template not founded"))
+    Err(format!("target not founded"))
 }
 
 pub fn click_on_target(
@@ -78,15 +99,12 @@ pub fn click_on_target(
 
 
     //найти место
-    let point = match ocv::ocv::find_template_in_image(recognition,&screenshot, target) {
-        Ok(Some(area)) => active_area.from_relative(area).get_average_point(),
-        Ok(None) => {
-            eprintln!("Образец не найден");
-            (0, 0)
-        }
+    let point = match ocv::ocv::find_target_in_image(recognition,&screenshot, target) {
+        Ok(area) => area.from_relative(active_area).get_average_point(),
         Err(e) => {
             eprintln!("Ошибка нахождения образца: {:?}", e);
-            (0, 0)
+            (960,520)
+            //return Err("click_on_target: Not founded".to_string())
         }
     };
 
@@ -103,15 +121,12 @@ pub fn click_on_target(
 pub fn find_object(
     recognition: f32,
     source: &Mat,
-    template: &Mat,
+    target: &Mat,
 ) -> Result<DisplayArea,String> {
 
-    match find_template_in_image(recognition, source, template) {
-        Ok(None)=>{
-            return Err("find_object: None object has been founded".to_string())
-        }
+    match find_target_in_image(recognition, source, target) {
         Ok(area)=> {
-            return Ok(area.unwrap())
+            return Ok(area)
         }
         Err(e)=>{
             return Err(format!("find_object: Error occurated from finding object: {}",e).to_string())

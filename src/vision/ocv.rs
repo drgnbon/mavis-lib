@@ -8,29 +8,29 @@ use crate::utils::DisplayArea;
 
 pub mod ocv {
 
-
     use super::*;
 
-    pub fn find_template_in_image(
+
+    pub fn find_target_in_image(
         recognition: f32,
         source: &Mat,
-        template: &Mat,
-    ) -> Result<Option<DisplayArea>, Box<dyn std::error::Error>> {
+        target: &Mat,
+    ) -> Result<DisplayArea, Box<dyn std::error::Error>> {
 
         if source.empty() {
-            return Err("find_template_in_image: Source image is empty".into());
+            return Err("find_target_in_image: Source image is empty".into());
         }
-        if template.empty() {
-            return Err("find_template_in_image: Template image is empty".into());
+        if target.empty() {
+            return Err("find_target_in_image: target image is empty".into());
         }
 
-        if template.rows() > source.rows() || template.cols() > source.cols() {
-            return Err("find_template_in_image: Template size exceeds source image dimensions".into());
+        if target.rows() > source.rows() || target.cols() > source.cols() {
+            return Err("find_target_in_image: target size exceeds source image dimensions".into());
         }
 
         if !(0.0..=1.0).contains(&recognition) {
             return Err(format!(
-                "find_template_in_image: Threshold must be between 0 and 1, got {}",
+                "find_target_in_image: Threshold must be between 0 and 1, got {}",
                 recognition
             ).into());
         }
@@ -45,17 +45,17 @@ pub mod ocv {
         // Перебор масштабов
         for scale in scales {
             // Вычисление нового размера шаблона
-            let new_width = (template.cols() as f64 * scale).round() as i32;
-            let new_height = (template.rows() as f64 * scale).round() as i32;
+            let new_width = (target.cols() as f64 * scale).round() as i32;
+            let new_height = (target.rows() as f64 * scale).round() as i32;
             if new_width <= 0 || new_height <= 0 {
                 continue;
             }
 
             // Изменение размера шаблона
-            let mut resized_template = Mat::default();
+            let mut resized_target = Mat::default();
             resize(
-                &template,
-                &mut resized_template,
+                &target,
+                &mut resized_target,
                 Size::new(new_width, new_height),
                 0.0,
                 0.0,
@@ -63,7 +63,7 @@ pub mod ocv {
             )?;
 
             // Проверка, что шаблон не больше изображения
-            if resized_template.cols() > source.cols() || resized_template.rows() > source.rows() {
+            if resized_target.cols() > source.cols() || resized_target.rows() > source.rows() {
                 continue;
             }
 
@@ -71,7 +71,7 @@ pub mod ocv {
             let mut result = Mat::default();
             match_template(
                 &source,
-                &resized_template,
+                &resized_target,
                 &mut result,
                 TM_CCOEFF_NORMED,
                 &Mat::default(),
@@ -102,39 +102,37 @@ pub mod ocv {
         // Проверка порога соответствия
         if best_val > recognition as f64 {
 
-            Ok(Some(DisplayArea::from_rectangle(
+            Ok(DisplayArea::from_rectangle(
                 best_loc.x, 
                 best_loc.y, 
-                template.cols() as u32, 
-                template.rows() as u32
-            )))
+                ( (target.cols() as f64) * best_scale) as u32, 
+                ( (target.rows() as f64) * best_scale) as u32
+            ))
 
         } else {
-            Ok(None)
+            Err("Not founded".into())
         }
     }
 
-    pub fn is_template_on_image(
+    pub fn is_target_on_image(
         recognition: f32,
         source: &Mat,
-        template: &Mat,
+        target: &Mat,
         area: &DisplayArea,
     )
     ->Result<bool,Box<dyn std::error::Error>> {
 
-        match find_template_in_image(
+        match find_target_in_image(
             recognition,
             source, 
-            template, 
+            target, 
         ){
-            Ok(None)=>{
-                return Ok(false);
-            }
             Ok(_)=>{
                 return Ok(true);
             }
             Err(e)=>{
-                println!("find_template_in_image: Error ocurated in is_template_on_image: {}",e);
+                println!("find_target_in_image: Error ocurated in is_target_on_image: {}",e);
+                return Ok(false);
             }
         }
 
